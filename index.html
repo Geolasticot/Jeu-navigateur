@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu Navigateur - Académie Magique</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            background-color: #1e1e2e;
+            color: #fff;
+        }
+
+        h1 {
+            margin: 20px 0;
+            font-size: 2em;
+            text-align: center;
+        }
+
+        #game-container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        #map-container {
+            flex: 3;
+            position: relative;
+            height: 600px;
+            background-image: url('https://i.postimg.cc/yNtPVqQg/DALL-E-2025-01-12-18-14-55-A-grand-magical-academy-hall-with-tall-stone-pillars-glowing-chandelie.webp');
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #555;
+            margin-right: 20px;
+        }
+
+        .interactive-zone {
+            position: absolute;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: #fff;
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .interactive-zone:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            background-color: #2a2a3e;
+            padding: 20px;
+            border: 2px solid #555;
+            height: 600px;
+        }
+
+        #spells {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #777;
+            background-color: #3a3a50;
+        }
+
+        #right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: #2a2a3e;
+            padding: 20px;
+            border: 2px solid #555;
+            height: 600px;
+        }
+
+        #quests, #actions, #inventory {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #777;
+            background-color: #3a3a50;
+        }
+
+        .action-button {
+            display: block;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #444;
+            color: #fff;
+            text-align: center;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-button:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="zone-title">Hall de l'académie</h1>
+    <div id="game-container">
+        <div id="left-panel">
+            <div id="spells">
+                <h3>Sorts</h3>
+                <ul id="spell-list">
+                    <li>Aucun sort appris.</li>
+                </ul>
+            </div>
+        </div>
+        <div id="map-container">
+            <div class="interactive-zone" id="library" style="top: 30%; left: 40%; width: 100px; height: 80px;" data-room="Bibliothèque">La Bibliothèque</div>
+            <div class="interactive-zone" id="greenhouse" style="top: 60%; left: 20%; width: 120px; height: 100px;" data-room="Serre">La Serre</div>
+            <div class="interactive-zone" id="classroom" style="top: 50%; left: 70%; width: 110px; height: 90px;" data-room="Salle de Classe">La Salle de Classe</div>
+            <div class="interactive-zone" id="portal" style="top: 80%; left: 50%; width: 130px; height: 130px;" data-room="Portail">Le Portail</div>
+            <div class="interactive-zone" id="dungeon" style="top: 10%; left: 10%; width: 130px; height: 100px;" data-room="Cachots" data-locked="true">Les Cachots</div>
+        </div>
+        <div id="right-panel">
+            <div id="quests">
+                <h3>Quêtes</h3>
+                <p id="current-quest">En cours : Trouver les affaires de ski de Peps</p>
+            </div>
+            <div id="actions">
+                <h3>Actions possibles</h3>
+                <button class="action-button" id="return-to-hall" style="display: none;">Retourner dans le hall de l'académie</button>
+                <button class="action-button" id="search-classroom" style="display: none;">Fouiller</button>
+                <button class="action-button" id="talk-to-peps" style="display: none;">Parler à Peps et lui rendre ses affaires de ski</button>
+            </div>
+            <div id="inventory">
+                <h3>Inventaire</h3>
+                <ul id="inventory-list">
+                    <li>Caleçon troué de Baptiste</li>
+                    <li>Baguette du frère de Robin</li>
+                    <li>Piou Piou</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rooms = {
+            library: { title: "Bibliothèque", image: 'https://i.postimg.cc/J0bK6TQy/DALL-E-2025-01-12-18-09-14-A-magical-library-filled-with-ancient-books-and-glowing-orbs-with-a-my.webp' },
+            greenhouse: { title: "Serre", image: 'https://i.postimg.cc/pLdYzV35/DALL-E-2025-01-12-18-17-44-A-lush-magical-greenhouse-filled-with-glowing-plants-vines-spiraling-a.webp' },
+            classroom: { title: "Salle de Classe", image: 'https://i.postimg.cc/WbT7pwnn/DALL-E-2025-01-12-18-17-57-A-mystical-classroom-in-a-magical-academy-with-old-wooden-desks-a-lar.webp' }
+        };
+
+        let searchCounter = 0;
+
+        document.querySelectorAll('.interactive-zone').forEach(zone => {
+            zone.addEventListener('click', function () {
+                const roomId = this.id;
+                const room = rooms[roomId];
+                document.getElementById('zone-title').innerText = room.title;
+                document.getElementById('map-container').style.backgroundImage = `url('${room.image}')`;
+                document.querySelectorAll('.interactive-zone').forEach(zone => zone.style.display = 'none');
+                document.getElementById('return-to-hall').style.display = 'block';
+
+                if (roomId === 'classroom') {
+                    document.getElementById('search-classroom').style.display = 'block';
+                }
+                if (roomId === 'greenhouse' && searchCounter >= 3) {
+                    document.getElementById('talk-to-peps').style.display = 'block';
+                }
+            });
+        });
+
+        document.getElementById('return-to-hall').addEventListener('click', () => {
+            document.getElementById('zone-title').innerText = "Hall de l'académie";
+            document.getElementById('map-container').style.backgroundImage = `url('https://i.postimg.cc/yNtPVqQg/DALL-E-2025-01-12-18-14-55-A-grand-magical-academy-hall-with-tall-stone-pillars-glowing-chandelie.webp')`;
+            document.querySelectorAll('.interactive-zone').forEach(zone => zone.style.display = 'block');
+            document.getElementById('return-to-hall').style.display = 'none';
+            document.getElementById('search-classroom').style.display = 'none';
+            document.getElementById('talk-to-peps').style.display = 'none';
+        });
+
+        document.getElementById('search-classroom').addEventListener('click', () => {
+            searchCounter++;
+            const inventoryList = document.getElementById('inventory-list');
+            if (searchCounter === 1) {
+                alert("Vous mettez la main dans une toile d'araignée.");
+            } else if (searchCounter === 2) {
+                alert("Une fiole vide.");
+            } else if (searchCounter === 3) {
+                alert("Vous trouvez les affaires de ski de Peps. Allez lui ramener à la serre avant la soirée de ce soir.");
+                inventoryList.innerHTML += "<li>Affaires de ski de Peps</li>";
+                document.getElementById('search-classroom').style.display = 'none';
+            }
+        });
+
+        document.getElementById('talk-to-peps').addEventListener('click', () => {
+            alert("Félicitations, vous avez terminé la quête ! Vous montez au niveau 2 et apprenez le sort T'as touché, T'achètes");
+            document.getElementById('current-quest').innerText = "Aucune quête en cours.";
+            const inventoryList = document.getElementById('inventory-list');
+            inventoryList.innerHTML = inventoryList.innerHTML.replace("<li>Affaires de ski de Peps</li>", "");
+            document.getElementById('spell-list').innerHTML = "<li>T'as touché t'achètes</li>";
+            document.getElementById('talk-to-peps').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
